@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SRR Time Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --blue:#1877f2;--blue-dark:#1558b0;--green:#42b72a;--orange:#ff6b35;
+  --red:#e53935;--bg:#f0f2f5;--card:#fff;--border:#dbe1e8;
+  --text:#1c1e21;--sub:#65676b;--radius:12px;--shadow:0 2px 8px rgba(0,0,0,.10);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* HEADER */
+.hdr{background:var(--blue);color:#fff;padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.hdr-logo{width:34px;height:34px;background:#fff2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px}
+.hdr-title{font-size:16px;font-weight:700;line-height:1.1}
+.hdr-title small{font-size:11px;font-weight:400;opacity:.8;display:block}
+.hdr-right{display:flex;align-items:center;gap:8px}
+#clock{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;opacity:.9}
+.live-pill{background:rgba(255,255,255,.2);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
+.live-dot{width:6px;height:6px;background:#42b72a;border-radius:50%;animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* FACILITY TOGGLE */
+.fac-bar{background:var(--blue-dark);display:flex;padding:6px 12px;gap:6px}
+.fac-btn{flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;background:rgba(255,255,255,.15);color:#fff}
+.fac-btn.active{background:#fff;color:var(--blue)}
+
+/* TABS */
+.tab-bar{background:#fff;border-bottom:1px solid var(--border);display:flex;position:sticky;top:56px;z-index:90;box-shadow:0 2px 4px rgba(0,0,0,.06)}
+.tab{flex:1;padding:8px 2px 7px;border:none;background:none;font-family:inherit;font-size:10.5px;font-weight:500;color:var(--sub);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;border-bottom:3px solid transparent;transition:.15s;line-height:1.25}
+.tab svg{width:19px;height:19px}
+.tab .my{font-size:9px;line-height:1.1}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+
+/* PANELS */
+.panel{display:none;padding:12px 12px 80px}
+.panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:10px;overflow:hidden}
+.card-hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-hd h3{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.badge{display:inline-flex;align-items:center;justify-content:center;background:var(--blue);color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;font-weight:700;min-width:20px}
+.badge.green{background:var(--green)}
+.badge.orange{background:var(--orange)}
+
+/* DEPT ACCORDION */
+.dept-row{border-bottom:1px solid var(--border);cursor:pointer;transition:.15s}
+.dept-row:last-child{border-bottom:none}
+.dept-hd{padding:11px 14px;display:flex;align-items:center;justify-content:space-between;user-select:none}
+.dept-name{font-size:13px;font-weight:600}
+.dept-meta{display:flex;align-items:center;gap:6px}
+.dept-arrow{font-size:10px;transition:.2s;color:var(--sub)}
+.dept-row.open .dept-arrow{transform:rotate(90deg)}
+.dept-body{display:none}
+.dept-row.open .dept-body{display:block}
+
+/* EMPLOYEE ROW */
+.emp-row{padding:10px 14px 10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f5f5f5;cursor:pointer;transition:.1s;background:#fff}
+.emp-row:active{background:#f0f2f5}
+.emp-row:last-child{border-bottom:none}
+.emp-photo{width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid var(--border)}
+.emp-photo img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.emp-info{flex:1;min-width:0}
+.emp-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.emp-task-label{font-size:11px;margin-top:1px;display:flex;align-items:center;gap:4px}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.status-dot.available{background:var(--green)}
+.status-dot.working{background:var(--orange)}
+.emp-timer{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--orange);flex-shrink:0}
+
+/* SUMMARY ROW */
+.summary-row{background:var(--bg);padding:6px 14px;display:flex;gap:10px;font-size:11px;color:var(--sub);border-bottom:1px solid var(--border)}
+.summary-item{display:flex;align-items:center;gap:4px}
+.summary-item .val{font-weight:700;color:var(--text)}
+
+/* TASK MODAL (bottom sheet) */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200}
+.overlay.open{display:block}
+.bottom-sheet{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;z-index:201;max-height:85vh;display:flex;flex-direction:column;transform:translateY(100%);transition:.25s cubic-bezier(.4,0,.2,1)}
+.bottom-sheet.open{transform:none}
+.sheet-handle{width:36px;height:4px;background:#ddd;border-radius:2px;margin:10px auto 0}
+.sheet-hd{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.sheet-hd h2{font-size:15px;font-weight:700}
+.close-btn{width:28px;height:28px;border-radius:50%;border:none;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.sheet-body{overflow-y:auto;padding:16px;flex:1}
+.sheet-foot{padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0}
+
+/* ACTIVE SESSION DISPLAY */
+.active-task-card{background:linear-gradient(135deg,#ff6b35,#f7931e);color:#fff;border-radius:12px;padding:16px;text-align:center;margin-bottom:16px}
+.active-task-name{font-size:18px;font-weight:700;margin-bottom:4px}
+.active-timer{font-size:42px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:2px;margin:8px 0}
+.active-start{font-size:12px;opacity:.85}
+
+/* TASK PICKER */
+.task-section-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--sub);letter-spacing:.5px;margin:12px 0 6px}
+.task-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.task-chip{padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;font-weight:500;background:#fff;cursor:pointer;text-align:left;transition:.15s}
+.task-chip:active,.task-chip.selected{border-color:var(--blue);background:#e8f0fe;color:var(--blue)}
+.custom-task-input{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;outline:none;transition:.15s}
+.custom-task-input:focus{border-color:var(--blue)}
+.time-row{display:flex;align-items:center;gap:8px;margin-top:12px}
+.time-row label{font-size:13px;font-weight:600;white-space:nowrap;color:var(--sub)}
+.time-input{flex:1;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;outline:none;transition:.15s}
+.time-input:focus{border-color:var(--blue)}
+
+/* BUTTONS */
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:active{background:var(--blue-dark)}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-ghost{background:var(--bg);color:var(--text)}
+.btn+.btn{margin-top:8px}
+
+/* HISTORY TAB */
+.filter-row{display:flex;gap:8px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-select{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:12px;background:#fff;outline:none;flex-shrink:0}
+.log-item{background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.log-row1{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.log-emp{font-size:14px;font-weight:700}
+.log-task{font-size:13px;color:var(--sub);margin-top:2px}
+.log-dur{font-size:14px;font-weight:700;color:var(--blue);flex-shrink:0;font-variant-numeric:tabular-nums}
+.log-row2{display:flex;gap:10px;margin-top:6px;font-size:11px;color:var(--sub)}
+.log-dept{background:var(--bg);padding:2px 8px;border-radius:20px;font-weight:600}
+.empty-state{text-align:center;padding:40px 20px;color:var(--sub)}
+.empty-state .icon{font-size:48px;display:block;margin-bottom:8px}
+.empty-state p{font-size:14px}
+
+/* PERFORMANCE TAB */
+.perf-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.stat-card{background:#fff;border-radius:10px;padding:12px;box-shadow:var(--shadow);text-align:center}
+.stat-val{font-size:24px;font-weight:700;color:var(--blue)}
+.stat-label{font-size:11px;color:var(--sub);margin-top:2px}
+.perf-emp-card{background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;cursor:pointer}
+.perf-emp-card:active{background:#f9f9f9}
+.perf-rank{font-size:18px;font-weight:800;color:var(--sub);width:28px;text-align:center}
+.perf-right{flex:1}
+.perf-name{font-size:14px;font-weight:700}
+.perf-stats{font-size:11px;color:var(--sub);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+.perf-bar-wrap{margin-top:6px;background:var(--bg);border-radius:4px;height:6px;overflow:hidden}
+.perf-bar{height:6px;background:var(--blue);border-radius:4px;transition:.4s}
+.sort-row{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.sort-row label{font-size:12px;color:var(--sub)}
+
+/* EMPLOYEE TAB */
+.emp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.emp-card{background:#fff;border-radius:12px;padding:14px 10px;box-shadow:var(--shadow);text-align:center;cursor:pointer;transition:.15s}
+.emp-card:active{transform:scale(.97)}
+.emp-card-photo{width:64px;height:64px;border-radius:50%;margin:0 auto 8px;background:var(--bg);border:3px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;position:relative}
+.emp-card-photo img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.emp-card-name{font-size:13px;font-weight:700;line-height:1.2}
+.emp-card-dept{font-size:11px;color:var(--sub);margin-top:2px}
+.emp-card-status{display:inline-block;margin-top:6px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.emp-card-status.available{background:#e7f9e7;color:var(--green)}
+.emp-card-status.working{background:#fff3ed;color:var(--orange)}
+
+/* EDIT EMPLOYEE MODAL */
+.edit-emp-photo{width:90px;height:90px;border-radius:50%;margin:0 auto 16px;background:var(--bg);border:3px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;cursor:pointer;position:relative}
+.edit-emp-photo img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.photo-overlay{position:absolute;inset:0;background:rgba(0,0,0,.4);border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s}
+.edit-emp-photo:hover .photo-overlay,.edit-emp-photo:active .photo-overlay{opacity:1}
+.field-label{font-size:12px;font-weight:600;color:var(--sub);margin-bottom:4px;display:block}
+.my{font-size:10px;opacity:.75;font-weight:400;display:block}
+.my-inline{font-size:10px;opacity:.7;font-weight:400;margin-left:4px}
+.field-input{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;outline:none;transition:.15s;margin-bottom:12px}
+.field-input:focus{border-color:var(--blue)}
+#photoInput{display:none}
+
+/* TASKS TAB */
+.tasks-list{margin-top:4px}
+.task-item{background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px}
+.task-item-name{flex:1;font-size:14px;font-weight:600}
+.task-item-cat{font-size:11px;color:var(--sub);margin-top:2px}
+.icon-btn{width:34px;height:34px;border-radius:50%;border:none;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s}
+.icon-btn:active{background:var(--border)}
+.add-task-form{background:#fff;border-radius:10px;padding:14px;box-shadow:var(--shadow);margin-bottom:10px}
+.add-task-form h4{font-size:13px;font-weight:700;margin-bottom:10px}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* REVIEW (employee detail) modal */
+.review-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.review-stat{background:var(--bg);border-radius:10px;padding:10px;text-align:center}
+.review-stat .val{font-size:20px;font-weight:700;color:var(--blue)}
+.review-stat .lbl{font-size:10px;color:var(--sub);margin-top:2px}
+.review-log-item{border-bottom:1px solid var(--border);padding:8px 0}
+.review-log-item:last-child{border-bottom:none}
+.review-log-task{font-size:13px;font-weight:600}
+.review-log-meta{font-size:11px;color:var(--sub);margin-top:2px;display:flex;gap:8px}
+
+/* TOAST */
+.toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(20px);background:#333;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:300;opacity:0;transition:.25s;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo">🦎</div>
+    <div class="hdr-title">SRR Time Tracker<small>Task & Performance Log · အလုပ်နှင့် စွမ်းဆောင်ရည် မှတ်တမ်း</small></div>
+  </div>
+  <div class="hdr-right">
+    <span id="clock">--:--:--</span>
+    <button onclick="promptSheetUrl()" style="background:rgba(255,255,255,.2);border:none;width:26px;height:26px;border-radius:50%;color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center" title="Sync Settings">⚙️</button>
+    <div class="live-pill" id="syncPill"><span class="live-dot"></span>Live</div>
+  </div>
+</div>
+
+<!-- FACILITY TOGGLE -->
+<div class="fac-bar">
+  <button class="fac-btn active" onclick="switchFacility('SRR1')">🏠 SRR1</button>
+  <button class="fac-btn" onclick="switchFacility('SRR2')">🏗️ SRR2</button>
+</div>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab active" onclick="switchTab('live')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+    Live<span class="my">ယခုလက်ရှိ</span>
+  </button>
+  <button class="tab" onclick="switchTab('history')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
+    History<span class="my">မှတ်တမ်း</span>
+  </button>
+  <button class="tab" onclick="switchTab('performance')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Performance<span class="my">စွမ်းဆောင်ရည်</span>
+  </button>
+  <button class="tab" onclick="switchTab('employees')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Employees<span class="my">ဝန်ထမ်းများ</span>
+  </button>
+  <button class="tab" onclick="switchTab('tasks')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    Tasks<span class="my">အလုပ်များ</span>
+  </button>
+</div>
+
+<!-- ─── LIVE TAB ─── -->
+<div id="panel-live" class="panel active">
+  <div id="live-summary-row" class="card" style="padding:12px 14px;margin-bottom:10px;display:flex;gap:16px;flex-wrap:wrap"></div>
+  <div id="dept-list"></div>
+</div>
+
+<!-- ─── HISTORY TAB ─── -->
+<div id="panel-history" class="panel">
+  <div class="filter-row">
+    <input type="date" id="hist-date" class="filter-select" oninput="renderHistory()">
+    <select class="filter-select" id="hist-dept" onchange="renderHistory()"><option value="">All Depts / ဌာနအားလုံး</option></select>
+    <select class="filter-select" id="hist-emp" onchange="renderHistory()"><option value="">All Staff / ဝန်ထမ်းအားလုံး</option></select>
+  </div>
+  <div id="hist-export-row" style="display:flex;justify-content:flex-end;margin-bottom:8px">
+    <button class="btn btn-ghost" style="width:auto;padding:7px 14px;font-size:12px" onclick="exportCSV()">📥 Export CSV / ဒေါင်းလုဒ်</button>
+  </div>
+  <div id="hist-list"></div>
+</div>
+
+<!-- ─── PERFORMANCE TAB ─── -->
+<div id="panel-performance" class="panel">
+  <div id="perf-summary" class="perf-summary"></div>
+  <div class="sort-row">
+    <label>Sort by: / အလိုက်စီရန်</label>
+    <select class="filter-select" id="perf-sort" onchange="renderPerformance()">
+      <option value="tasks">Most Tasks / အလုပ်အများဆုံး</option>
+      <option value="time">Most Time / အချိန်အများဆုံး</option>
+      <option value="avg">Best Avg Time / ပျမ်းမျှအကောင်းဆုံး</option>
+    </select>
+    <select class="filter-select" id="perf-range" onchange="renderPerformance()">
+      <option value="7">Last 7 days / ရက် ၇ ရက်</option>
+      <option value="30">Last 30 days / ရက် ၃၀ ရက်</option>
+      <option value="all">All time / အချိန်အားလုံး</option>
+    </select>
+  </div>
+  <div id="perf-list"></div>
+</div>
+
+<!-- ─── EMPLOYEES TAB ─── -->
+<div id="panel-employees" class="panel">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <select class="filter-select" id="emp-fac-filter" onchange="renderEmployeeTab()">
+      <option value="">Both Facilities / နှစ်ခုလုံး</option>
+      <option value="SRR1">SRR1 only</option>
+      <option value="SRR2">SRR2 only</option>
+    </select>
+    <select class="filter-select" id="emp-dept-filter" style="margin-left:6px" onchange="renderEmployeeTab()"><option value="">All Depts / ဌာနအားလုံး</option></select>
+  </div>
+  <div id="emp-grid" class="emp-grid"></div>
+</div>
+
+<!-- ─── TASKS TAB ─── -->
+<div id="panel-tasks" class="panel">
+  <div class="add-task-form">
+    <h4>➕ Add New Task / အလုပ်အသစ်ထည့်ရန်</h4>
+    <label class="field-label">Task Name / အလုပ်အမည်</label>
+    <input class="field-input" id="new-task-name" placeholder="e.g. Clean enclosures">
+    <label class="field-label">Category / အမျိုးအစား</label>
+    <select class="field-input" id="new-task-cat">
+      <option>Feeding</option><option>Cleaning</option><option>Food Prep</option>
+      <option>Eggs</option><option>Medicine</option><option>Maintenance</option>
+      <option>Gardening</option><option>Other</option>
+    </select>
+    <button class="btn btn-primary" style="margin-top:4px" onclick="addTask()">Add Task / အလုပ်ထည့်ရန်</button>
+  </div>
+  <div id="tasks-list" class="tasks-list"></div>
+</div>
+
+<!-- ─── TASK MODAL (start/end) ─── -->
+<div class="overlay" id="task-overlay" onclick="closeTaskModal()"></div>
+<div class="bottom-sheet" id="task-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hd">
+    <h2 id="sheet-emp-name">Employee</h2>
+    <button class="close-btn" onclick="closeTaskModal()">✕</button>
+  </div>
+  <div class="sheet-body" id="sheet-body"></div>
+  <div class="sheet-foot" id="sheet-foot"></div>
+</div>
+
+<!-- ─── EMPLOYEE EDIT MODAL ─── -->
+<div class="overlay" id="emp-overlay" onclick="closeEmpModal()"></div>
+<div class="bottom-sheet" id="emp-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hd">
+    <h2>Edit Employee</h2>
+    <button class="close-btn" onclick="closeEmpModal()">✕</button>
+  </div>
+  <div class="sheet-body" id="emp-sheet-body"></div>
+</div>
+
+<!-- ─── REVIEW MODAL ─── -->
+<div class="overlay" id="review-overlay" onclick="closeReviewModal()"></div>
+<div class="bottom-sheet" id="review-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hd">
+    <h2 id="review-emp-name">Review</h2>
+    <button class="close-btn" onclick="closeReviewModal()">✕</button>
+  </div>
+  <div class="sheet-body" id="review-body"></div>
+</div>
+
+<input type="file" id="photoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+//  DATA MODEL
+// ─────────────────────────────────────────────
+var KEY = 'srr_tracker_v1';
+var DB;
+var currentFacility = 'SRR1';
+var currentTab = 'live';
+var modalEmpId = null;  // which employee's modal is open
+var editEmpId = null;
+var selectedTask = null;
+var timerInterval = null;
+var POLL_MS = 15000;
+var syncing = false;
+var activeTimers = {}; // empId → intervalId for the per-employee display
+
+var SRR1_DEPTS = [
+  {name:'DG',count:3,my:''},{name:'GD',count:1,my:''},{name:'IG',count:1,my:''},{name:'Frogs',count:1,my:''},
+  {name:'CG',count:2,my:''},{name:'LPG',count:2,my:''},{name:'FTG',count:2,my:''},{name:'BWT',count:5,my:''},
+  {name:'RT',count:5,my:''},{name:'Medicine',count:1,my:'ဆေးဝါး'},{name:'BTS',count:3,my:''},{name:'Egg Room',count:1,my:'ဥသိုလှောင်ခန်း'},
+  {name:'Worms',count:2,my:'တီကောင်ဌာန'},{name:'Gardeners',count:3,my:'ဥယျာဉ်မှူး'},{name:'Mechanics',count:2,my:'စက်ပြင်ဌာန'},
+  {name:'Maid',count:1,my:'အိမ်အကူ'}
+];
+var SRR2_DEPTS = [
+  {name:'Feed Small BD',count:3,my:'အိမ်မြှောင်ကလေးကို ကျွေးမွေးပါ'},
+  {name:'Clean Small BD',count:3,my:'အိမ်မြှောင်ကလေးများကို သန့်ရှင်းပါ'},
+  {name:'Cut Small BD',count:3,my:'အိမ်မြှောင်ကလေးကို ဖြတ်တောက်ပါ'},
+  {name:'Feed LG BD',count:3,my:'အရွယ်ရောက်ပြီးသော အိမ်မြှောင်များကို ကျွေးမွေးပါ'},
+  {name:'Clean LG BD',count:3,my:'သန့်ရှင်းရေးဌာန'},
+  {name:'Cut LG BD',count:4,my:'တိရစ္ဆာန်ကြီးများကို ဖြတ်တောက်ပါ'},
+  {name:'Egg Room',count:1,my:'ဥသိုလှောင်ခန်း'},
+  {name:'Collect Eggs',count:1,my:'ကြက်ဥကို စုဆောင်းပါ'},
+  {name:'Crickets',count:3,my:'ခရစ်ကတ်ဌာန'},
+  {name:'Maid',count:1,my:'အိမ်အကူ'},
+  {name:'Gardeners',count:2,my:'ဥယျာဉ်မှူး'},
+  {name:'Mechanics',count:2,my:'စက်ပြင်ဌာန'}
+];
+var DEFAULT_TASKS = [
+  {id:'t1',name:'Feeding',cat:'Feeding'},{id:'t2',name:'Clean Enclosures',cat:'Cleaning'},
+  {id:'t3',name:'Mop / Wash Floor',cat:'Cleaning'},{id:'t4',name:'Cut / Prep Food',cat:'Food Prep'},
+  {id:'t5',name:'Collect Eggs',cat:'Eggs'},{id:'t6',name:'Candle Eggs',cat:'Eggs'},
+  {id:'t7',name:'Turn Eggs',cat:'Eggs'},{id:'t8',name:'Clean Incubators',cat:'Eggs'},
+  {id:'t9',name:'Medicine / Treatment',cat:'Medicine'},{id:'t10',name:'Health Check',cat:'Medicine'},
+  {id:'t11',name:'Sort Animals',cat:'Other'},{id:'t12',name:'Count Animals',cat:'Other'},
+  {id:'t13',name:'Water Plants',cat:'Gardening'},{id:'t14',name:'Trim / Cut Plants',cat:'Gardening'},
+  {id:'t15',name:'Harvest',cat:'Gardening'},{id:'t16',name:'Repair Equipment',cat:'Maintenance'},
+  {id:'t17',name:'Install Equipment',cat:'Maintenance'},{id:'t18',name:'Inspect Equipment',cat:'Maintenance'},
+  {id:'t19',name:'Feed Crickets',cat:'Feeding'},{id:'t20',name:'Harvest Crickets',cat:'Other'}
+];
+
+// ─────────────────────────────────────────────
+//  PERSISTENCE
+// ─────────────────────────────────────────────
+function loadDB(){
+  try{
+    var d=localStorage.getItem(KEY);
+    return d?JSON.parse(d):null;
+  }catch(e){return null;}
+}
+function saveDB(){
+  try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}
+}
+function initDB(){
+  DB = loadDB();
+  if(DB && DB.employees && DB.employees.length){
+    reconcileDepartments();
+    return;
+  }
+  // Seed fresh
+  DB = {employees:[], tasks:JSON.parse(JSON.stringify(DEFAULT_TASKS)), sessions:[], logs:[]};
+  var eid = 1;
+  SRR1_DEPTS.forEach(function(d){
+    for(var i=1;i<=d.count;i++){
+      DB.employees.push({id:'e'+eid++,name:'Employee '+pad2(eid-1),dept:d.name,facility:'SRR1',photo:null});
+    }
+  });
+  SRR2_DEPTS.forEach(function(d){
+    for(var i=1;i<=d.count;i++){
+      DB.employees.push({id:'e'+eid++,name:'Employee '+pad2(eid-1),dept:d.name,facility:'SRR2',photo:null});
+    }
+  });
+  saveDB();
+}
+// If departments.xlsx adds a new department (e.g. "Maid"), top up any
+// existing saved roster with the missing slots — never removes or renames
+// employees that are already there, so manager-entered names/photos survive.
+function reconcileDepartments(){
+  var changed=false;
+  var maxNum=0;
+  DB.employees.forEach(function(e){
+    var m=(e.name||'').match(/Employee (\d+)/);
+    if(m) maxNum=Math.max(maxNum,parseInt(m[1],10));
+  });
+  function topUp(depts,facility){
+    depts.forEach(function(d){
+      var have=DB.employees.filter(function(e){return e.facility===facility&&e.dept===d.name;}).length;
+      for(var i=have;i<d.count;i++){
+        maxNum++;
+        // Deterministic ID (not random) so every device that reconciles the
+        // same missing slot produces the SAME id and merges as one employee
+        // instead of creating duplicate rows that never sync with each other.
+        var detId='e_'+facility+'_'+d.name.replace(/[^a-zA-Z0-9]/g,'')+'_'+(i+1);
+        DB.employees.push({id:detId,name:'Employee '+pad2(maxNum),dept:d.name,facility:facility,photo:null});
+        changed=true;
+      }
+    });
+  }
+  topUp(SRR1_DEPTS,'SRR1');
+  topUp(SRR2_DEPTS,'SRR2');
+  if(changed) saveDB();
+}
+
+// ─────────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────────
+function pad2(n){return String(n).padStart(2,'0');}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function nowTime(){var d=new Date();return pad2(d.getHours())+':'+pad2(d.getMinutes());}
+function fmtDate(s){if(!s)return '';var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function elapsed(startISO){
+  var ms=Date.now()-new Date(startISO).getTime();
+  var s=Math.floor(ms/1000);
+  var h=Math.floor(s/3600);var m=Math.floor((s%3600)/60);var sec=s%60;
+  return (h?h+'h ':'')+pad2(m)+'m '+pad2(sec)+'s';
+}
+function elapsedMin(startISO){return Math.round((Date.now()-new Date(startISO).getTime())/60000);}
+function fmtMin(m){if(!m&&m!==0)return '--';if(m<60)return m+'m';return Math.floor(m/60)+'h '+pad2(m%60)+'m';}
+function nextId(prefix){return prefix+(Date.now()%99999)+''+Math.floor(Math.random()*100);}
+
+// ─────────────────────────────────────────────
+//  GOOGLE SHEETS SYNC
+//  Same pattern as the other SRR apps: GET-only requests (POST+no-cors can't
+//  be read back), photos NEVER sent to the server (local-only, per the
+//  veggie/order trackers), and every date normalized on read since Sheets can
+//  silently auto-convert text dates into Date objects.
+// ─────────────────────────────────────────────
+var DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyii2GFv5W-XgkBNxg9RnylhFmj5CEo5jViab_NpuObBpUivxyNazQ5LasGVzNvN08_/exec';
+function getSheetUrl(){ return localStorage.getItem('srr_tracker_sheet_url')||DEFAULT_SHEET_URL; }
+function setSheetUrl(u){ localStorage.setItem('srr_tracker_sheet_url',(u||'').trim()); }
+function isConfigured(){ return getSheetUrl().indexOf('https://script.google.com')===0; }
+
+function promptSheetUrl(){
+  var cur=getSheetUrl();
+  var u=prompt('Paste your Google Apps Script Web App URL:\n(Deploy the .gs file as a Web App, then paste the URL it gives you)', cur);
+  if(u===null) return;
+  setSheetUrl(u);
+  showToast(u?'✓ Sheet URL saved — syncing…':'Sync disabled');
+  syncFromServer();
+}
+
+// Normalize whatever date shape comes back from Sheets ("2026-06-28",
+// a Date-object-derived ISO string, "Wed Jun 24", etc.) to "YYYY-MM-DD".
+var MONTH_ABBR=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function normalizeDate(v){
+  if(!v) return todayStr();
+  v=String(v);
+  var m=v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return m[1]+'-'+m[2]+'-'+m[3];
+  var m2=v.match(/([A-Za-z]{3})\w*\s+(\d{1,2})(?:,?\s+(\d{4}))?/);
+  if(m2){
+    var mi=MONTH_ABBR.indexOf(m2[1]);
+    if(mi>-1){
+      var year=m2[3]?parseInt(m2[3],10):(new Date()).getFullYear();
+      return year+'-'+pad2(mi+1)+'-'+pad2(parseInt(m2[2],10));
+    }
+  }
+  var d=new Date(v);
+  if(!isNaN(d.getTime())) return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
+  return todayStr();
+}
+// Rebuild a clean local ISO datetime from separate date+time fields rather
+// than trusting a raw datetime string from the sheet (avoids timezone/Date-
+// object surprises entirely).
+function buildISO(dateStr,timeStr){ return normalizeDate(dateStr)+'T'+(timeStr||'00:00')+':00'; }
+
+function updateSyncPill(status){
+  var pill=document.getElementById('syncPill');
+  if(!pill) return;
+  if(status==='live') pill.innerHTML='<span class="live-dot"></span>Live';
+  else if(status==='syncing') pill.innerHTML='<span class="live-dot" style="background:#ffa726"></span>Syncing';
+  else if(status==='offline') pill.innerHTML='<span class="live-dot" style="background:#e53935;animation:none"></span>Offline';
+  else pill.innerHTML='<span class="live-dot" style="background:#aaa;animation:none"></span>Not Set Up';
+}
+
+function apiCall(action,params){
+  if(!isConfigured()) return Promise.resolve(null);
+  params=params||{};params.action=action;
+  var qs=Object.keys(params).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(params[k]==null?'':params[k]);}).join('&');
+  return fetch(getSheetUrl()+'?'+qs).then(function(r){return r.json();}).catch(function(e){console.warn('Sync error:',action,e);return null;});
+}
+
+function mergeEmployeesFromServer(list){
+  (list||[]).forEach(function(se){
+    var local=empById(se.id);
+    if(local){ local.name=se.name; local.dept=se.dept; local.facility=se.facility; }
+    else { DB.employees.push({id:se.id,name:se.name,dept:se.dept,facility:se.facility,photo:null}); }
+  });
+}
+function mergeLogsFromServer(list){
+  (list||[]).forEach(function(sl){
+    var date=normalizeDate(sl.date);
+    var rec={
+      id:sl.id,empId:sl.empId,empName:sl.empName,dept:sl.dept,facility:sl.facility,
+      taskName:sl.taskName,startTime:sl.startTime,endTime:sl.endTime,
+      durationMin:parseInt(sl.durationMin)||0,date:date,
+      startISO:buildISO(date,sl.startTime),endISO:buildISO(date,sl.endTime)
+    };
+    var idx=DB.logs.findIndex(function(l){return l.id===rec.id;});
+    if(idx===-1) DB.logs.push(rec); else DB.logs[idx]=rec;
+  });
+}
+
+function syncFromServer(){
+  if(!isConfigured()){ updateSyncPill('unset'); return Promise.resolve(); }
+  if(syncing) return Promise.resolve();
+  syncing=true;
+  updateSyncPill('syncing');
+  return apiCall('get_all').then(function(data){
+    syncing=false;
+    if(!data||data.error){ updateSyncPill('offline'); return; }
+    if((!data.employees||!data.employees.length) && DB.employees.length){
+      // First-ever sync: this Sheet is empty — push our local seed data to it
+      // so it becomes the shared source of truth going forward.
+      var empPayload=DB.employees.map(function(e){return {id:e.id,name:e.name,dept:e.dept,facility:e.facility};});
+      apiCall('seed_employees',{employees:JSON.stringify(empPayload)});
+      apiCall('seed_tasks',{tasks:JSON.stringify(DB.tasks)});
+    } else {
+      mergeEmployeesFromServer(data.employees);
+      if(data.tasks&&data.tasks.length) DB.tasks=data.tasks.map(function(t){return {id:t.id,name:t.name,cat:t.cat};});
+      DB.sessions=(data.sessions||[]).map(function(s){
+        var date=normalizeDate(s.date);
+        return {id:s.id,empId:s.empId,taskName:s.taskName,startTime:s.startTime,date:date,startISO:buildISO(date,s.startTime)};
+      });
+      mergeLogsFromServer(data.logs);
+    }
+    saveDB();
+    updateSyncPill('live');
+    refreshCurrentTab();
+  });
+}
+function refreshCurrentTab(){
+  if(currentTab==='live') renderLive();
+  else if(currentTab==='history'){ populateHistoryFilters(); renderHistory(); }
+  else if(currentTab==='performance') renderPerformance();
+  else if(currentTab==='employees') renderEmployeeTab();
+  else if(currentTab==='tasks') renderTasks();
+}
+function startPolling(){
+  setInterval(function(){
+    if(document.visibilityState==='visible') syncFromServer();
+  },POLL_MS);
+}
+
+function empById(id){return DB.employees.find(function(e){return e.id===id;});}
+function deptMy(emp){
+  var list=emp.facility==='SRR1'?SRR1_DEPTS:SRR2_DEPTS;
+  var d=list.find(function(x){return x.name===emp.dept;});
+  return d?d.my:'';
+}
+function activeSession(empId){return DB.sessions.find(function(s){return s.empId===empId;});}
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2200);
+}
+function getEmpPhoto(emp){
+  if(emp.photo) return '<img src="'+emp.photo+'" alt="">';
+  var initials=(emp.name||'?').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
+  return '<div style="width:100%;height:100%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;border-radius:50%">'+initials+'</div>';
+}
+
+// ─────────────────────────────────────────────
+//  CLOCK
+// ─────────────────────────────────────────────
+function startClock(){
+  setInterval(function(){
+    var d=new Date();
+    document.getElementById('clock').textContent=pad2(d.getHours())+':'+pad2(d.getMinutes())+':'+pad2(d.getSeconds());
+  },1000);
+}
+
+// ─────────────────────────────────────────────
+//  NAV
+// ─────────────────────────────────────────────
+function switchFacility(fac){
+  currentFacility=fac;
+  document.querySelectorAll('.fac-btn').forEach(function(b,i){
+    b.classList.toggle('active',['SRR1','SRR2'][i]===fac);
+  });
+  if(currentTab==='live') renderLive();
+  populateHistoryFilters();
+  populateEmpFilters();
+}
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelector('[onclick="switchTab(\''+tab+'\')"]').classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(tab==='live') renderLive();
+  else if(tab==='history') renderHistory();
+  else if(tab==='performance') renderPerformance();
+  else if(tab==='employees') renderEmployeeTab();
+  else if(tab==='tasks') renderTasks();
+}
+
+// ─────────────────────────────────────────────
+//  LIVE TAB
+// ─────────────────────────────────────────────
+function renderLive(){
+  var depts = currentFacility==='SRR1'?SRR1_DEPTS:SRR2_DEPTS;
+  var emps = DB.employees.filter(function(e){return e.facility===currentFacility;});
+  var activeSessions = DB.sessions.filter(function(s){
+    var emp=empById(s.empId); return emp&&emp.facility===currentFacility;
+  });
+  // Summary row
+  var sr=document.getElementById('live-summary-row');
+  sr.innerHTML='<div class="summary-item"><span class="val">'+emps.length+'</span> staff <span class="my-inline">ဝန်ထမ်း</span></div>'+
+    '<div class="summary-item"><span class="val orange" style="color:var(--orange)">'+activeSessions.length+'</span> on task <span class="my-inline">အလုပ်လုပ်နေ</span></div>'+
+    '<div class="summary-item"><span class="val green" style="color:var(--green)">'+(emps.length-activeSessions.length)+'</span> available <span class="my-inline">အားလပ်</span></div>';
+  // Dept list
+  var html='';
+  depts.forEach(function(d){
+    var dEmps=emps.filter(function(e){return e.dept===d.name;});
+    var working=dEmps.filter(function(e){return activeSession(e.id);}).length;
+    html+='<div class="card dept-row" id="dept-'+d.name.replace(/\s/g,'_')+'" onclick="toggleDept(this)">';
+    html+='<div class="dept-hd"><span class="dept-name">'+d.name+(d.my?'<span class="my" style="display:block;font-weight:400">'+d.my+'</span>':'')+'</span>';
+    html+='<div class="dept-meta">';
+    if(working) html+='<span class="badge orange">'+working+' working</span>';
+    html+='<span class="badge">'+dEmps.length+'</span>';
+    html+='<span class="dept-arrow">▶</span></div></div>';
+    html+='<div class="dept-body">';
+    dEmps.forEach(function(emp){
+      var sess=activeSession(emp.id);
+      html+='<div class="emp-row" onclick="openTaskModal(\''+emp.id+'\')">';
+      html+='<div class="emp-photo">'+getEmpPhoto(emp)+'</div>';
+      html+='<div class="emp-info">';
+      html+='<div class="emp-name">'+emp.name+'</div>';
+      html+='<div class="emp-task-label">';
+      if(sess){
+        html+='<span class="status-dot working"></span><span style="color:var(--orange)">'+sess.taskName+'</span>';
+      } else {
+        html+='<span class="status-dot available"></span><span style="color:var(--green)">Available · အားလပ်</span>';
+      }
+      html+='</div></div>';
+      if(sess){
+        html+='<span class="emp-timer" id="timer-'+emp.id+'">'+elapsed(sess.startISO)+'</span>';
+      }
+      html+='</div>';
+    });
+    html+='</div></div>';
+  });
+  document.getElementById('dept-list').innerHTML=html;
+}
+function toggleDept(el){
+  el.classList.toggle('open');
+}
+
+// ─────────────────────────────────────────────
+//  LIVE TIMER REFRESH
+// ─────────────────────────────────────────────
+function startGlobalTimer(){
+  setInterval(function(){
+    DB.sessions.forEach(function(s){
+      var el=document.getElementById('timer-'+s.empId);
+      if(el) el.textContent=elapsed(s.startISO);
+    });
+    // Also refresh active timer in modal if open
+    if(modalEmpId){
+      var ms=document.getElementById('modal-active-timer');
+      if(ms){
+        var sess=activeSession(modalEmpId);
+        if(sess) ms.textContent=elapsed(sess.startISO);
+      }
+    }
+  },1000);
+}
+
+// ─────────────────────────────────────────────
+//  TASK MODAL
+// ─────────────────────────────────────────────
+function openTaskModal(empId){
+  modalEmpId=empId;
+  selectedTask=null;
+  var emp=empById(empId);
+  document.getElementById('sheet-emp-name').textContent=emp.name+' · '+emp.dept;
+  var sess=activeSession(empId);
+  var bodyHtml='';
+  var footHtml='';
+  if(sess){
+    bodyHtml='<div class="active-task-card">'+
+      '<div style="font-size:12px;opacity:.9;margin-bottom:4px">⏱ Currently working on · ယခုလုပ်နေသော</div>'+
+      '<div class="active-task-name">'+sess.taskName+'</div>'+
+      '<div class="active-timer" id="modal-active-timer">'+elapsed(sess.startISO)+'</div>'+
+      '<div class="active-start">Started at '+sess.startTime+' · '+'စတင်ချိန်</div></div>';
+    footHtml='<button class="btn btn-red" onclick="endTask(\''+empId+'\')">✓ End Task · အလုပ်ပြီးပြီ</button>';
+  } else {
+    // Group tasks by category
+    var cats={};
+    DB.tasks.forEach(function(t){
+      if(!cats[t.cat]) cats[t.cat]=[];
+      cats[t.cat].push(t);
+    });
+    bodyHtml='<div class="task-section-label">Select a task · အလုပ်တစ်ခုရွေးပါ</div>';
+    bodyHtml+='<div class="task-grid">';
+    DB.tasks.forEach(function(t){
+      bodyHtml+='<button class="task-chip" id="chip-'+t.id+'" onclick="selectTask(\''+t.id+'\',\''+t.name+'\')">'+t.name+'</button>';
+    });
+    bodyHtml+='</div>';
+    bodyHtml+='<div class="task-section-label">Or type a custom task · သို့မဟုတ် အလုပ်အမည်ရိုက်ထည့်ပါ</div>';
+    bodyHtml+='<input class="custom-task-input" id="custom-task" placeholder="Type task name…" oninput="selectCustomTask(this.value)">';
+    bodyHtml+='<div class="time-row">';
+    bodyHtml+='<label>Start time · စတင်ချိန်:</label>';
+    bodyHtml+='<input type="time" class="time-input" id="start-time-input" value="'+nowTime()+'">';
+    bodyHtml+='</div>';
+    footHtml='<button class="btn btn-green" onclick="startTask(\''+empId+'\')">▶ Start Task · အလုပ်စတင်ရန်</button>';
+  }
+  document.getElementById('sheet-body').innerHTML=bodyHtml;
+  document.getElementById('sheet-foot').innerHTML=footHtml;
+  document.getElementById('task-overlay').classList.add('open');
+  document.getElementById('task-sheet').classList.add('open');
+}
+function selectTask(id,name){
+  selectedTask={id:id,name:name};
+  document.getElementById('custom-task').value='';
+  document.querySelectorAll('.task-chip').forEach(function(c){c.classList.remove('selected');});
+  var chip=document.getElementById('chip-'+id);
+  if(chip) chip.classList.add('selected');
+}
+function selectCustomTask(val){
+  if(val.trim()){
+    selectedTask={id:'custom',name:val.trim()};
+    document.querySelectorAll('.task-chip').forEach(function(c){c.classList.remove('selected');});
+  } else if(selectedTask&&selectedTask.id==='custom'){
+    selectedTask=null;
+  }
+}
+function startTask(empId){
+  var taskName=(selectedTask&&selectedTask.name)||document.getElementById('custom-task').value.trim();
+  if(!taskName){showToast('⚠️ Please select or type a task');return;}
+  var timeVal=document.getElementById('start-time-input').value||nowTime();
+  var today=todayStr();
+  var startISO=today+'T'+timeVal+':00';
+  DB.sessions.push({id:nextId('s'),empId:empId,taskName:taskName,startTime:timeVal,startISO:startISO,date:today});
+  saveDB();
+  closeTaskModal();
+  renderLive();
+  showToast('▶ '+taskName+' started');
+  apiCall('start_session',{id:DB.sessions[DB.sessions.length-1].id,empId:empId,taskName:taskName,startTime:timeVal,date:today});
+}
+function endTask(empId){
+  var sess=activeSession(empId);
+  if(!sess) return;
+  var emp=empById(empId);
+  var endISO=new Date().toISOString();
+  var endTime=nowTime();
+  var durMin=Math.max(0,elapsedMin(sess.startISO));
+  DB.logs.push({
+    id:nextId('l'),empId:empId,empName:emp.name,dept:emp.dept,facility:emp.facility,
+    taskName:sess.taskName,startTime:sess.startTime,endTime:endTime,
+    startISO:sess.startISO,endISO:endISO,durationMin:durMin,date:sess.date
+  });
+  DB.sessions=DB.sessions.filter(function(s){return s.id!==sess.id;});
+  saveDB();
+  closeTaskModal();
+  renderLive();
+  showToast('✓ Task ended · '+fmtMin(durMin));
+  var lastLog=DB.logs[DB.logs.length-1];
+  apiCall('end_session',{id:lastLog.id,empId:empId,empName:emp.name,dept:emp.dept,facility:emp.facility,taskName:sess.taskName,startTime:sess.startTime,endTime:endTime,durationMin:durMin,date:sess.date});
+}
+function closeTaskModal(){
+  document.getElementById('task-overlay').classList.remove('open');
+  document.getElementById('task-sheet').classList.remove('open');
+  modalEmpId=null;
+}
+
+// ─────────────────────────────────────────────
+//  HISTORY TAB
+// ─────────────────────────────────────────────
+function populateHistoryFilters(){
+  var depts=[...new Set(DB.employees.filter(function(e){return e.facility===currentFacility;}).map(function(e){return e.dept;}))];
+  var dSel=document.getElementById('hist-dept');
+  dSel.innerHTML='<option value="">All Depts</option>';
+  depts.forEach(function(d){dSel.innerHTML+='<option>'+d+'</option>';});
+  var eSel=document.getElementById('hist-emp');
+  eSel.innerHTML='<option value="">All Staff</option>';
+  DB.employees.filter(function(e){return e.facility===currentFacility;}).forEach(function(e){
+    eSel.innerHTML+='<option value="'+e.id+'">'+e.name+'</option>';
+  });
+  if(!document.getElementById('hist-date').value) document.getElementById('hist-date').value=todayStr();
+}
+function renderHistory(){
+  var dateFilter=document.getElementById('hist-date').value;
+  var deptFilter=document.getElementById('hist-dept').value;
+  var empFilter=document.getElementById('hist-emp').value;
+  var logs=DB.logs.filter(function(l){
+    var emp=empById(l.empId);
+    if(!emp||emp.facility!==currentFacility) return false;
+    if(dateFilter&&l.date!==dateFilter) return false;
+    if(deptFilter&&l.dept!==deptFilter) return false;
+    if(empFilter&&l.empId!==empFilter) return false;
+    return true;
+  }).slice().sort(function(a,b){return (b.startISO||'').localeCompare(a.startISO||'');});
+  var html='';
+  if(!logs.length){
+    html='<div class="empty-state"><span class="icon">📋</span><p>No logs for this date · ဒီရက်အတွက် မှတ်တမ်းမရှိပါ</p></div>';
+  } else {
+    logs.forEach(function(l){
+      html+='<div class="log-item">';
+      html+='<div class="log-row1"><div>';
+      html+='<div class="log-emp">'+l.empName+'</div>';
+      html+='<div class="log-task">'+l.taskName+'</div></div>';
+      html+='<div class="log-dur">'+fmtMin(l.durationMin)+'</div></div>';
+      html+='<div class="log-row2">';
+      html+='<span class="log-dept">'+l.dept+'</span>';
+      html+='<span>'+l.startTime+' → '+l.endTime+'</span>';
+      html+='<span>'+fmtDate(l.date)+'</span>';
+      html+='</div></div>';
+    });
+  }
+  document.getElementById('hist-list').innerHTML=html;
+}
+function exportCSV(){
+  var dateFilter=document.getElementById('hist-date').value;
+  var logs=DB.logs.filter(function(l){
+    var emp=empById(l.empId); return emp&&emp.facility===currentFacility&&(!dateFilter||l.date===dateFilter);
+  });
+  var rows=[['Date','Employee','Department','Facility','Task','Start','End','Duration (min)']];
+  logs.forEach(function(l){rows.push([l.date,l.empName,l.dept,l.facility,l.taskName,l.startTime,l.endTime,l.durationMin]);});
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+(c||'')+'\"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='SRR_Log_'+(dateFilter||'all')+'.csv';
+  a.click();
+}
+
+// ─────────────────────────────────────────────
+//  PERFORMANCE TAB
+// ─────────────────────────────────────────────
+function getLogsInRange(days){
+  if(days==='all') return DB.logs;
+  var cutoff=new Date(); cutoff.setDate(cutoff.getDate()-parseInt(days));
+  var cutStr=cutoff.getFullYear()+'-'+pad2(cutoff.getMonth()+1)+'-'+pad2(cutoff.getDate());
+  return DB.logs.filter(function(l){return l.date>=cutStr;});
+}
+function renderPerformance(){
+  var range=document.getElementById('perf-range').value||'7';
+  var sortBy=document.getElementById('perf-sort').value||'tasks';
+  var logs=getLogsInRange(range).filter(function(l){
+    var e=empById(l.empId); return e&&e.facility===currentFacility;
+  });
+  // Summary stats
+  var totalTasks=logs.length;
+  var totalMin=logs.reduce(function(s,l){return s+l.durationMin;},0);
+  var deptCount={};
+  logs.forEach(function(l){deptCount[l.dept]=(deptCount[l.dept]||0)+1;});
+  var busyDept=Object.keys(deptCount).sort(function(a,b){return deptCount[b]-deptCount[a];})[0]||'—';
+  var avgMin=totalTasks?Math.round(totalMin/totalTasks):0;
+  document.getElementById('perf-summary').innerHTML=
+    '<div class="stat-card"><div class="stat-val">'+totalTasks+'</div><div class="stat-label">Total Tasks · စုစုပေါင်းအလုပ်</div></div>'+
+    '<div class="stat-card"><div class="stat-val">'+fmtMin(totalMin)+'</div><div class="stat-label">Total Time · စုစုပေါင်းအချိန်</div></div>'+
+    '<div class="stat-card"><div class="stat-val">'+fmtMin(avgMin)+'</div><div class="stat-label">Avg per Task · ပျမ်းမျှ</div></div>'+
+    '<div class="stat-card"><div class="stat-val" style="font-size:14px">'+busyDept+'</div><div class="stat-label">Busiest Dept · အလုပ်များဆုံးဌာန</div></div>';
+  // Per employee stats
+  var empStats={};
+  logs.forEach(function(l){
+    if(!empStats[l.empId]) empStats[l.empId]={empId:l.empId,empName:l.empName,dept:l.dept,count:0,totalMin:0};
+    empStats[l.empId].count++;
+    empStats[l.empId].totalMin+=l.durationMin;
+  });
+  var statList=Object.values(empStats);
+  statList.sort(function(a,b){
+    if(sortBy==='tasks') return b.count-a.count;
+    if(sortBy==='time') return b.totalMin-a.totalMin;
+    if(sortBy==='avg'){
+      var aAvg=a.count?a.totalMin/a.count:0;
+      var bAvg=b.count?b.totalMin/b.count:0;
+      return aAvg-bAvg; // lower avg = faster = better
+    }
+    return 0;
+  });
+  var maxTasks=statList[0]?statList[0].count:1;
+  var html='';
+  if(!statList.length){
+    html='<div class="empty-state"><span class="icon">📊</span><p>No data for this period · ဒီကာလအတွက် အချက်အလက်မရှိပါ</p></div>';
+  } else {
+    statList.forEach(function(s,i){
+      var avg=s.count?Math.round(s.totalMin/s.count):0;
+      var emp=empById(s.empId);
+      var barPct=Math.round(s.count/maxTasks*100);
+      html+='<div class="perf-emp-card" onclick="openReviewModal(\''+s.empId+'\')">';
+      html+='<div class="perf-rank">'+(i+1)+'</div>';
+      html+='<div class="emp-photo" style="width:38px;height:38px;flex-shrink:0">'+getEmpPhoto(emp||{name:s.empName,photo:null})+'</div>';
+      html+='<div class="perf-right">';
+      html+='<div class="perf-name">'+s.empName+'</div>';
+      html+='<div class="perf-stats"><span>'+s.dept+'</span><span><b>'+s.count+'</b> tasks/အလုပ်</span><span>Avg/ပျမ်းမျှ: <b>'+fmtMin(avg)+'</b></span><span>Total/စုစုပေါင်း: <b>'+fmtMin(s.totalMin)+'</b></span></div>';
+      html+='<div class="perf-bar-wrap"><div class="perf-bar" style="width:'+barPct+'%"></div></div>';
+      html+='</div></div>';
+    });
+  }
+  document.getElementById('perf-list').innerHTML=html;
+}
+
+// ─────────────────────────────────────────────
+//  EMPLOYEE TAB
+// ─────────────────────────────────────────────
+function populateEmpFilters(){
+  var sel=document.getElementById('emp-dept-filter');
+  var depts=[...new Set(DB.employees.map(function(e){return e.dept;}))].sort();
+  sel.innerHTML='<option value="">All Depts</option>';
+  depts.forEach(function(d){sel.innerHTML+='<option>'+d+'</option>';});
+}
+function renderEmployeeTab(){
+  var facFilter=document.getElementById('emp-fac-filter').value;
+  var deptFilter=document.getElementById('emp-dept-filter').value;
+  var emps=DB.employees.filter(function(e){
+    if(facFilter&&e.facility!==facFilter) return false;
+    if(deptFilter&&e.dept!==deptFilter) return false;
+    return true;
+  });
+  var html='';
+  emps.forEach(function(emp){
+    var sess=activeSession(emp.id);
+    html+='<div class="emp-card" onclick="openEmpModal(\''+emp.id+'\')">';
+    html+='<div class="emp-card-photo">'+getEmpPhoto(emp)+'</div>';
+    html+='<div class="emp-card-name">'+emp.name+'</div>';
+    html+='<div class="emp-card-dept">'+emp.facility+' · '+emp.dept+(deptMy(emp)?' ('+deptMy(emp)+')':'')+'</div>';
+    html+='<div class="emp-card-status '+(sess?'working':'available')+'">'+(sess?'⏱ '+sess.taskName.substring(0,12)+'…':'✓ Available · အားလပ်')+'</div>';
+    html+='</div>';
+  });
+  if(!html) html='<div class="empty-state" style="grid-column:1/-1"><span class="icon">👥</span><p>No employees found · ဝန်ထမ်းမတွေ့ပါ</p></div>';
+  document.getElementById('emp-grid').innerHTML=html;
+}
+
+// ─────────────────────────────────────────────
+//  EMPLOYEE EDIT MODAL
+// ─────────────────────────────────────────────
+function openEmpModal(empId){
+  editEmpId=empId;
+  var emp=empById(empId);
+  var html='';
+  html+='<div style="text-align:center">';
+  html+='<div class="edit-emp-photo" onclick="triggerPhotoUpload()">'+getEmpPhoto(emp);
+  html+='<div class="photo-overlay" style="font-size:22px;color:#fff">📷</div></div>';
+  html+='<div style="font-size:11px;color:var(--sub);margin-bottom:16px">Tap photo to change · ပုံပြောင်းရန် နှိပ်ပါ</div></div>';
+  html+='<label class="field-label">Name (English) · အမည်</label>';
+  html+='<input class="field-input" id="edit-name" value="'+escHtml(emp.name)+'" placeholder="Employee name">';
+  html+='<label class="field-label">Department · ဌာန</label>';
+  html+='<input class="field-input" id="edit-dept" value="'+escHtml(emp.dept)+'" placeholder="Department">';
+  html+='<label class="field-label">Facility · လုပ်ငန်းခွင်</label>';
+  html+='<select class="field-input" id="edit-fac">';
+  html+='<option'+(emp.facility==='SRR1'?' selected':'')+'>SRR1</option>';
+  html+='<option'+(emp.facility==='SRR2'?' selected':'')+'>SRR2</option></select>';
+  html+='<button class="btn btn-primary" onclick="saveEmpEdit()">💾 Save Changes · သိမ်းရန်</button>';
+  html+='<button class="btn btn-ghost" style="margin-top:8px" onclick="openReviewModal(\''+empId+'\')">📊 View Performance · စွမ်းဆောင်ရည်ကြည့်ရန်</button>';
+  document.getElementById('emp-sheet-body').innerHTML=html;
+  document.getElementById('emp-overlay').classList.add('open');
+  document.getElementById('emp-sheet').classList.add('open');
+}
+function saveEmpEdit(){
+  var emp=empById(editEmpId);
+  emp.name=document.getElementById('edit-name').value.trim()||emp.name;
+  emp.dept=document.getElementById('edit-dept').value.trim()||emp.dept;
+  emp.facility=document.getElementById('edit-fac').value;
+  // Also update name in logs
+  DB.logs.forEach(function(l){if(l.empId===editEmpId) l.empName=emp.name;});
+  saveDB();
+  closeEmpModal();
+  renderEmployeeTab();
+  if(currentTab==='live') renderLive();
+  showToast('✓ Saved');
+  apiCall('save_employee',{id:emp.id,name:emp.name,dept:emp.dept,facility:emp.facility});
+}
+function triggerPhotoUpload(){
+  document.getElementById('photoInput').dataset.for='emp';
+  document.getElementById('photoInput').click();
+}
+function handlePhotoUpload(e){
+  var file=e.target.files[0];
+  if(!file||!editEmpId) return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var img=new Image();
+    img.onload=function(){
+      var canvas=document.createElement('canvas');
+      var sz=200;
+      canvas.width=sz;canvas.height=sz;
+      var ctx=canvas.getContext('2d');
+      var minSide=Math.min(img.width,img.height);
+      var sx=(img.width-minSide)/2,sy=(img.height-minSide)/2;
+      ctx.drawImage(img,sx,sy,minSide,minSide,0,0,sz,sz);
+      var dataUrl=canvas.toDataURL('image/jpeg',0.72);
+      var emp=empById(editEmpId);
+      emp.photo=dataUrl;
+      saveDB();
+      openEmpModal(editEmpId); // reopen to show new photo
+      showToast('📷 Photo saved');
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value='';
+}
+function closeEmpModal(){
+  document.getElementById('emp-overlay').classList.remove('open');
+  document.getElementById('emp-sheet').classList.remove('open');
+  editEmpId=null;
+}
+
+// ─────────────────────────────────────────────
+//  REVIEW MODAL
+// ─────────────────────────────────────────────
+function openReviewModal(empId){
+  closeEmpModal();
+  var emp=empById(empId);
+  if(!emp) return;
+  document.getElementById('review-emp-name').textContent=emp.name+' — Review';
+  var logs=DB.logs.filter(function(l){return l.empId===empId;}).sort(function(a,b){return (b.startISO||'').localeCompare(a.startISO||'');});
+  var totalMin=logs.reduce(function(s,l){return s+l.durationMin;},0);
+  var avgMin=logs.length?Math.round(totalMin/logs.length):0;
+  var days=[...new Set(logs.map(function(l){return l.date;}))].length;
+  // Count tasks
+  var taskCount={};
+  logs.forEach(function(l){taskCount[l.taskName]=(taskCount[l.taskName]||0)+1;});
+  var topTask=Object.keys(taskCount).sort(function(a,b){return taskCount[b]-taskCount[a];})[0]||'—';
+  var sess=activeSession(empId);
+  var html='';
+  html+='<div style="text-align:center;margin-bottom:14px">';
+  html+='<div class="emp-photo" style="width:64px;height:64px;margin:0 auto 8px">'+getEmpPhoto(emp)+'</div>';
+  html+='<div style="font-size:15px;font-weight:700">'+emp.name+'</div>';
+  html+='<div style="font-size:12px;color:var(--sub)">'+emp.facility+' · '+emp.dept+'</div>';
+  if(sess) html+='<div style="margin-top:6px;display:inline-block;background:#fff3ed;color:var(--orange);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700">⏱ '+sess.taskName+'</div>';
+  html+='</div>';
+  html+='<div class="review-stats">';
+  html+='<div class="review-stat"><div class="val">'+logs.length+'</div><div class="lbl">Total Tasks · စုစုပေါင်း</div></div>';
+  html+='<div class="review-stat"><div class="val">'+fmtMin(avgMin)+'</div><div class="lbl">Avg Duration · ပျမ်းမျှ</div></div>';
+  html+='<div class="review-stat"><div class="val">'+days+'</div><div class="lbl">Days Worked · အလုပ်လုပ်ရက်</div></div>';
+  html+='</div>';
+  html+='<div style="font-size:12px;color:var(--sub);margin-bottom:10px"><b>Most common task · အများဆုံးလုပ်သောအလုပ်:</b> '+topTask+'</div>';
+  html+='<div style="font-size:13px;font-weight:700;margin-bottom:8px">Recent History · မကြာသေးမီကမှတ်တမ်း</div>';
+  if(!logs.length){
+    html+='<div class="empty-state"><p>No logs yet · မှတ်တမ်းမရှိသေးပါ</p></div>';
+  } else {
+    logs.slice(0,20).forEach(function(l){
+      html+='<div class="review-log-item">';
+      html+='<div class="review-log-task">'+l.taskName+'</div>';
+      html+='<div class="review-log-meta"><span>'+fmtDate(l.date)+'</span><span>'+l.startTime+'→'+l.endTime+'</span><span><b>'+fmtMin(l.durationMin)+'</b></span></div>';
+      html+='</div>';
+    });
+  }
+  document.getElementById('review-body').innerHTML=html;
+  document.getElementById('review-overlay').classList.add('open');
+  document.getElementById('review-sheet').classList.add('open');
+}
+function closeReviewModal(){
+  document.getElementById('review-overlay').classList.remove('open');
+  document.getElementById('review-sheet').classList.remove('open');
+}
+
+// ─────────────────────────────────────────────
+//  TASKS TAB
+// ─────────────────────────────────────────────
+function renderTasks(){
+  var html='';
+  var cats={};
+  DB.tasks.forEach(function(t){if(!cats[t.cat])cats[t.cat]=[];cats[t.cat].push(t);});
+  Object.keys(cats).sort().forEach(function(cat){
+    html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--sub);letter-spacing:.5px;margin:10px 0 4px">'+cat+'</div>';
+    cats[cat].forEach(function(t){
+      html+='<div class="task-item">';
+      html+='<div><div class="task-item-name">'+t.name+'</div></div>';
+      html+='<button class="icon-btn" onclick="deleteTask(\''+t.id+'\')" title="Delete">🗑</button>';
+      html+='</div>';
+    });
+  });
+  document.getElementById('tasks-list').innerHTML=html;
+}
+function addTask(){
+  var name=document.getElementById('new-task-name').value.trim();
+  var cat=document.getElementById('new-task-cat').value;
+  if(!name){showToast('⚠️ Enter a task name');return;}
+  DB.tasks.push({id:nextId('t'),name:name,cat:cat});
+  saveDB();
+  document.getElementById('new-task-name').value='';
+  renderTasks();
+  showToast('✓ Task added');
+  apiCall('add_task',{id:DB.tasks[DB.tasks.length-1].id,name:name,cat:cat});
+}
+function deleteTask(id){
+  if(!confirm('Delete this task?')) return;
+  DB.tasks=DB.tasks.filter(function(t){return t.id!==id;});
+  saveDB();
+  renderTasks();
+  showToast('🗑 Task deleted');
+  apiCall('delete_task',{id:id});
+}
+function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+function init(){
+  initDB();
+  startClock();
+  startGlobalTimer();
+  document.getElementById('hist-date').value=todayStr();
+  populateHistoryFilters();
+  populateEmpFilters();
+  renderLive();
+  updateSyncPill(isConfigured()?'syncing':'unset');
+  syncFromServer();
+  startPolling();
+}
+init();
+</script>
+</body>
+</html>
